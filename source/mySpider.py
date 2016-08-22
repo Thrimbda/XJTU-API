@@ -2,13 +2,13 @@
 # @Author: Macpotty
 # @Date:   2016-05-22 15:35:19
 # @Last Modified by:   Macpotty
-# @Last Modified time: 2016-07-27 15:41:36
+# @Last Modified time: 2016-08-23 00:11:02
 import requests
 from bs4 import BeautifulSoup
 from collections import deque
-import re
 import FileModule
 import traceback
+import time
 
 
 class Spider:
@@ -60,14 +60,12 @@ class Spider:
     def getUrls(self):
         # for i in self.soup.find_all('a', href=True):
         try:
-            for item in self.soup.find('table', attrs={'class': True, 'id': True}).find_all('a', href=True):
+            time.sleep(3)
+            print(self.soup.find('div', attrs={'class': 'list'}), "here")
+            for item in self.soup.find('div', attrs={'class': 'list'}).find_all('a', href=True):
                 url = item.get('href')
-                print(url not in self.visited and item.get_text() == '评教')
-                if url not in self.visited and item.get_text() == '评教':
-                    if url[0] == '?':
-                        url = 'http://ssfw.xjtu.edu.cn/index.portal' + url
-                    self.urls.append(url)
-                    print('appended queue --->' + url)
+                self.urls.append(url)
+                print('appended queue --->' + url)
         except AttributeError as e:
             print(self.response)
             print(self.response.status_code)
@@ -90,15 +88,16 @@ class Spider:
             self.getSite(self.currUrl)
             print('already grabed:' + str(self.cnt) + '    grabing <---  ' + self.currUrl)
             try:
-                if function is not None:
-                    function(*args, **kargs)
+                # if function is not None:
+                #     function(*args, **kargs)
+                self.fobj.fileWrite(self.soup.find('div', attrs={'class': 'subjectwrap'}))
             except Exception:
                 traceback.print_exc()
             self.cnt += 1
 
     def mainCtl(self):
         while self.urls:
-            self.openQueue(function=self.postForm, process=mySpider.teachingAssess, autoCollect=True, judgeCondition='总体评价', assessGrade=[1, 1, 1, 1, 2])
+            self.openQueue(function=None, autoCollect=False)
             # time.sleep(2)
             try:
                 self.getUrls()
