@@ -2,13 +2,13 @@
 # @Author: Macpotty
 # @Date:   2016-05-22 15:35:19
 # @Last Modified by:   Macpotty
-# @Last Modified time: 2016-08-23 00:11:02
+# @Last Modified time: 2016-08-26 13:59:27
 import requests
 from bs4 import BeautifulSoup
 from collections import deque
 import FileModule
 import traceback
-import time
+import threading
 
 
 class Spider:
@@ -20,6 +20,7 @@ class Spider:
                         'Accept-Language': 'zh-CN,zh;q=0.8',
                         'Referer': 'https://www.baidu.com/link?url=YEhWaYGOPw1mlBWWji4kqYkbuQYoRfmYE94YXDz7Dwm&wd=&eqid=d69a671b000e59e70000000357406ffe',
                         'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.86 Safari/537.36',
+                        # 'X-Requested-With': 'XMLHttpRequest'
                         }
         self.rootUrl = url
         self.currUrl = self.rootUrl
@@ -34,9 +35,9 @@ class Spider:
         self.cnt = 0
         self.fobj = None
         if record:
-            self.FileModule = FileModule.FileModule()
+            self.fobj = FileModule.FileModule()
 
-    def postForm(self, process=None, autoCollect=True, judgeCondition='', **payload):
+    def postForm(self, process=None, autoCollect=True, judgeCondition='', postURL=None, **payload):
         if judgeCondition != '' and judgeCondition not in self.soup.body.text:
             return
         if autoCollect:
@@ -46,7 +47,10 @@ class Spider:
             payload = dict(token, **payload)
         if process is not None:
             payload, self.currUrl = process(payload)
-        self.response = self.session.post(self.currUrl, data=payload, headers=self.headers)
+        if postURL is None:
+            postURL = self.currUrl
+        self.response = self.session.post(postURL, data=payload, headers=self.headers)
+        print(payload)
         if self.response.status_code != 200:
             self.response.raise_for_status()
         self.soup = BeautifulSoup(self.response.text, 'html.parser')
@@ -60,17 +64,19 @@ class Spider:
     def getUrls(self):
         # for i in self.soup.find_all('a', href=True):
         try:
-            time.sleep(3)
-            print(self.soup.find('div', attrs={'class': 'list'}), "here")
-            for item in self.soup.find('div', attrs={'class': 'list'}).find_all('a', href=True):
+            # print(self.soup.find('div', attrs={'class': 'indent'}), "here")
+            for item in self.soup.find('div', attrs={'class': 'indent'}).find_all('a', href=True):
                 url = item.get('href')
-                self.urls.append(url)
-                print('appended queue --->' + url)
+                if "http" in url:
+                    self.urls.append(url)
+                    print('appended queue --->' + url)
         except AttributeError as e:
             print(self.response)
             print(self.response.status_code)
             print(e)
             print("No such class in this page: %s" % self.currUrl)
+        except Exception:
+            raise Exception
 
     def getStub(self):
         self.soup.find('a', onclick=True)
@@ -83,17 +89,23 @@ class Spider:
         self.soup = BeautifulSoup(self.response.text, 'html.parser')
 
     def openQueue(self, function=None, *args, **kargs):
-        self.currUrl = self.urls.popleft()
-        if self.currUrl not in self.visited:
-            self.getSite(self.currUrl)
-            print('already grabed:' + str(self.cnt) + '    grabing <---  ' + self.currUrl)
-            try:
-                # if function is not None:
-                #     function(*args, **kargs)
-                self.fobj.fileWrite(self.soup.find('div', attrs={'class': 'subjectwrap'}))
-            except Exception:
-                traceback.print_exc()
-            self.cnt += 1
+        try:
+            self.currUrl = self.urls.popleft()
+        except IndexError:
+            print("try to pop from a empty deque.")
+        else:
+            if self.currUrl not in self.visited:
+                self.getSite(self.currUrl)
+                print('already grabed:' + str(self.cnt) + '    grabing <---  ' + self.currUrl)
+                try:
+                    # if function is not None:
+                    #     function(*args, **kargs)
+                    self.fobj.fileWrite(repr(self.soup.find('div', attrs={'class': 'subjectwrap'})))
+                except Exception:
+                    self.fobj.fileEnd()
+                    traceback.print_exc()
+                finally:
+                    self.cnt += 1
 
     def mainCtl(self):
         while self.urls:
@@ -107,7 +119,13 @@ class Spider:
             else:
                 print('done!')
         if self.fobj is not None:
-            self.FileModule.fileEnd()
+            self.fobj.fileEnd()
+
+    def multiThreadMainCtl(self):
+        threads = []
+        for i in range(4):
+            threads.append(threading.Thread(target=self.mainCtl))
+            threads[i].start()
 
     def teachingAssess(self, token, assessGrade=[1, 1, 1, 1, 2]):
         """this function is very XJTUic.
