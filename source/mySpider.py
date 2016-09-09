@@ -2,13 +2,14 @@
 # @Author: Macpotty
 # @Date:   2016-05-22 15:35:19
 # @Last Modified by:   64509
-# @Last Modified time: 2016-09-09 23:19:35
+# @Last Modified time: 2016-09-10 00:18:59
 import requests
 from bs4 import BeautifulSoup
 from collections import deque
 import FileModule
 import traceback
 import threading
+import re
 
 
 class Spider:
@@ -62,11 +63,8 @@ class Spider:
     def getUrls(self):
         raise NotImplementedError
 
-    def getStub(self, name):
-        for item in self.soup.find_all('a', onclick=True):
-            if name in item:
-                return item['href']
-        return
+    def getStub(self):
+        return re.findall("direct\\('(.*?)'\\);", self.soup.find('a', onclick=True)['onclick'])[0]
 
     def refresh(self):
         self.currUrl = self.response.url
@@ -105,9 +103,8 @@ class Spider:
 
 class XJTUSpider(Spider):
     """docstring for XJTUSpider"""
-    def __init__(self, arg):
-        super(XJTUSpider, self).__init__()
-        self.arg = arg
+    def __init__(self, url, record=False):
+        super(XJTUSpider, self).__init__(url, False)
 
     def getUrls(self):
         # for i in self.soup.find_all('a', href=True):
@@ -127,45 +124,45 @@ class XJTUSpider(Spider):
             raise Exception
         
     def teachingAssess(self, token, assessGrade=[1, 1, 1, 1, 2]):
-    """this function is very XJTUic.
-       once administrator change those value of checkboxes.
-       we done.
+        """this function is very XJTUic.
+           once administrator change those value of checkboxes.
+           we done.
 
-    use it to do the tiring teaching assessment.
-    :type assessGrades: List[grade]
-    """
-    if '实验教师' in self.soup.body.text:
-        assessments = {1: 'PJDJ0441', 2: 'PJDJ0475', 3: 'PJDJ0476', 4: 'PJDJ0477', 5: 'PJDJ0478', 6: 'PJDJ0479'}
-    else:
-        assessments = {1: 'PJDJ0410', 2: 'PJDJ0411', 3: 'PJDJ0382', 4: 'PJDJ0383', 5: 'PJDJ0412', 6: 'PJDJ0385'}
-    token['ztpj'] = '老师认真负责'
-    token['pgyj'] = '满意'
-    token['sfytj'] = 'true'
-    token['type'] = '2'
-    token['actionType'] = '2'
-    token.pop('zbbm')
-    zbbm = []
-    name = None
-    assessIndex = -1
-    for item in self.soup.find('table', id=True).find_all('input', attrs={'name': True, 'value': True}):
-        if 'pfdj' in item.get('name') and item.get('name') != name:
-            name = item.get('name')
-            assessIndex += 1
-            token[name] = assessments[assessGrade[assessIndex]]
-        if 'qz_' in item.get('name'):
-            token[item.get('name')] = '20'
-        if 'zbbm' in item.get('name'):
-            zbbm.append(item.get('value'))
-    list(set(zbbm))
-    payload = list(token.items())
-    for item in zbbm:
-        payload.append(('zbbm', item))
-    try:
-        url = 'http://ssfw.xjtu.edu.cn/index.portal' + self.soup.find('form', action=True).get('action')
-    except AttributeError as e:
-        print(e)
-        raise requests.HTTPError['NONONO']
-    return payload, url
+        use it to do the tiring teaching assessment.
+        :type assessGrades: List[grade]
+        """
+        if '实验教师' in self.soup.body.text:
+            assessments = {1: 'PJDJ0441', 2: 'PJDJ0475', 3: 'PJDJ0476', 4: 'PJDJ0477', 5: 'PJDJ0478', 6: 'PJDJ0479'}
+        else:
+            assessments = {1: 'PJDJ0410', 2: 'PJDJ0411', 3: 'PJDJ0382', 4: 'PJDJ0383', 5: 'PJDJ0412', 6: 'PJDJ0385'}
+        token['ztpj'] = '老师认真负责'
+        token['pgyj'] = '满意'
+        token['sfytj'] = 'true'
+        token['type'] = '2'
+        token['actionType'] = '2'
+        token.pop('zbbm')
+        zbbm = []
+        name = None
+        assessIndex = -1
+        for item in self.soup.find('table', id=True).find_all('input', attrs={'name': True, 'value': True}):
+            if 'pfdj' in item.get('name') and item.get('name') != name:
+                name = item.get('name')
+                assessIndex += 1
+                token[name] = assessments[assessGrade[assessIndex]]
+            if 'qz_' in item.get('name'):
+                token[item.get('name')] = '20'
+            if 'zbbm' in item.get('name'):
+                zbbm.append(item.get('value'))
+        list(set(zbbm))
+        payload = list(token.items())
+        for item in zbbm:
+            payload.append(('zbbm', item))
+        try:
+            url = 'http://ssfw.xjtu.edu.cn/index.portal' + self.soup.find('form', action=True).get('action')
+        except AttributeError as e:
+            print(e)
+            raise requests.HTTPError['NONONO']
+        return payload, url
 
     def mainCtl(self):
         while self.urls:
@@ -180,3 +177,4 @@ class XJTUSpider(Spider):
                 print('done!')
         if self.fobj is not None:
             self.fobj.fileEnd()
+# direct('http://ssfw.xjtu.edu.cn/index.portal?ticket=ST-1737360-0aHZBfERTXtCqsai5F5l-gdscas01');
