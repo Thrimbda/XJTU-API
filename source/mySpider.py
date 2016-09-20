@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 # @Author: Macpotty
 # @Date:   2016-05-22 15:35:19
-# @Last Modified by:   64509
-# @Last Modified time: 2016-09-10 00:18:59
+# @Last Modified by:   Macpotty
+# @Last Modified time: 2016-09-17 15:01:56
 import requests
 from bs4 import BeautifulSoup
 from collections import deque
@@ -10,6 +10,7 @@ import FileModule
 import traceback
 import threading
 import re
+import json
 
 
 class Spider:
@@ -82,11 +83,11 @@ class Spider:
                 self.getSite(self.currUrl)
                 print('already grabed:' + str(self.cnt) + '    grabing <---  ' + self.currUrl)
                 try:
-                    # if function is not None:
-                    #     function(*args, **kargs)
-                    self.fobj.fileWrite(repr(self.soup.find('div', attrs={'class': 'subjectwrap'})))
+                    if function is not None:
+                        function(*args, **kargs)
                 except Exception:
-                    self.fobj.fileEnd()
+                    if self.fobj is not None:
+                        self.fobj.fileEnd()
                     traceback.print_exc()
                 finally:
                     self.cnt += 1
@@ -107,14 +108,13 @@ class XJTUSpider(Spider):
         super(XJTUSpider, self).__init__(url, False)
 
     def getUrls(self):
-        # for i in self.soup.find_all('a', href=True):
         try:
-            # print(self.soup.find('div', attrs={'class': 'indent'}), "here")
-            for item in self.soup.find('div', attrs={'class': 'indent'}).find_all('a', href=True):
+            for item in self.soup.find('tavle', attrs={'class': 'portlet-table'}).find_all('a', href=True):
+                if item.text != '评教':
+                    continue
                 url = item.get('href')
-                if "http" in url:
-                    self.urls.append(url)
-                    print('appended queue --->' + url)
+                self.urls.append(url)
+                print('appended queue --->' + url)
         except AttributeError as e:
             print(self.response)
             print(self.response.status_code)
@@ -122,19 +122,24 @@ class XJTUSpider(Spider):
             print("No such class in this page: %s" % self.currUrl)
         except Exception:
             raise Exception
-        
-    def teachingAssess(self, token, assessGrade=[1, 1, 1, 1, 2]):
-        """this function is very XJTUic.
+
+    def teachingAssess(self, token):
+        """this function is totally XJTUic.
            once administrator change those value of checkboxes.
            we done.
 
-        use it to do the tiring teaching assessment.
+        use it to do the ting teaching assessment.
         :type assessGrades: List[grade]
         """
         if '实验教师' in self.soup.body.text:
             assessments = {1: 'PJDJ0441', 2: 'PJDJ0475', 3: 'PJDJ0476', 4: 'PJDJ0477', 5: 'PJDJ0478', 6: 'PJDJ0479'}
+            assessGrade = [1, 1, 1, 1, 2]
+        elif '实验辅助人员' in self.soup.body.text:
+            assessments = {1: 'PJDJ0441', 2: 'PJDJ0475', 3: 'PJDJ0476', 4: 'PJDJ0477', 5: 'PJDJ0478', 6: 'PJDJ0479'}
+            assessGrade = [1, 1, 1, 2]
         else:
             assessments = {1: 'PJDJ0410', 2: 'PJDJ0411', 3: 'PJDJ0382', 4: 'PJDJ0383', 5: 'PJDJ0412', 6: 'PJDJ0385'}
+            assessGrade = [1, 1, 1, 1, 1, 1, 1, 1, 1, 2]
         token['ztpj'] = '老师认真负责'
         token['pgyj'] = '满意'
         token['sfytj'] = 'true'
@@ -164,17 +169,36 @@ class XJTUSpider(Spider):
             raise requests.HTTPError['NONONO']
         return payload, url
 
-    def mainCtl(self):
-        while self.urls:
-            self.openQueue(function=None, autoCollect=False)
-            # time.sleep(2)
+    def openQueue(self, function=None, *args, **kargs):
+        try:
+            self.currUrl = self.urls.popleft()
+        except IndexError:
+            print("try to pop from a empty deque.")
+        else:
+            if self.currUrl not in self.visited:
+                self.getSite(self.currUrl)
+                print('already grabed:' + str(self.cnt) + '    grabing <---  ' + self.currUrl)
             try:
-                self.getUrls()
-            except requests.HTTPError as e:
-                print(e)
-                break
-            else:
-                print('done!')
+                if function is not None:
+                    function(*args, **kargs)
+            except Exception:
+                self.fobj.fileEnd()
+                traceback.print_exc()
+            finally:
+                self.cnt += 1
+
+    def getPostInfo(self):
+        self.jsonStr = json.loads(self.session.get('http://ssfw.xjtu.edu.cn/pnull.portal?.pen=pe1061&.pmn=view&action=optionsRetrieve&className=com.wiscom.app.w5ssfw.pjgl.domain.V_PJGL_XNXQ&namedQueryId=&displayFormat={json}&useBaseFilter=true').text)
+
+    def mainCtl(self, week):
+        self.getPostInfo()
+        print(self.jsonStr, self.jsonStr['options'])
+        self.postForm(postURL='http://ssfw.xjtu.edu.cn/index.portal?.p=Znxjb20ud2lzY29tLnBvcnRhbC5zaXRlLmltcGwuRnJhZ21lbnRXaW5kb3d8ZjExNjF8dmlld3xub3JtYWx8YWN0aW9uPXF1ZXJ5', newSearch='true', pc=self.jsonStr['options'][week]['code'])
+        try:
+            self.getUrls()
+        except requests.HTTPError as e:
+            print(e)
+        while self.urls:
+            self.openQueue(function=self.postForm, process=self.teachingAssess, autoCollect=False)
         if self.fobj is not None:
             self.fobj.fileEnd()
-# direct('http://ssfw.xjtu.edu.cn/index.portal?ticket=ST-1737360-0aHZBfERTXtCqsai5F5l-gdscas01');
