@@ -2,7 +2,7 @@
 # @Author: Macpotty
 # @Date:   2016-05-22 15:35:19
 # @Last Modified by:   Macpotty
-# @Last Modified time: 2016-09-17 15:01:56
+# @Last Modified time: 2016-09-21 19:04:14
 import requests
 from bs4 import BeautifulSoup
 from collections import deque
@@ -110,7 +110,7 @@ class XJTUSpider(Spider):
                 if item.text != '评教':
                     continue
                 url = item.get('href')
-                self.urls.append(url)
+                self.urls.append('http://ssfw.xjtu.edu.cn/index.portal' + url)
                 print('appended queue --->' + url)
         except AttributeError as e:
             print(self.response)
@@ -126,22 +126,24 @@ class XJTUSpider(Spider):
         """
         return re.findall("direct\\('(.*?)'\\);", self.soup.find('a', onclick=True)['onclick'])[0]
 
+    def assessmentsGen(self):
+        assessments = {}
+        for item in self.soup.find('table', attrs={'class': 'portlet-table'}).tr.find_all('td', style='vertical-align:middle'):
+            assessments[item.div.input.get('name')] = item.div.input.get('value')
+        return assessments
+
     def teachingAssess(self, token):
         """this function is totally XJTUic.
            once administrator change those value of checkboxes.
            we done.
 
         use it to do the ting teaching assessment.
-        :type assessGrades: List[grade]
         """
-        if '实验教师' in self.soup.body.text:
-            assessments = {1: 'PJDJ0441', 2: 'PJDJ0475', 3: 'PJDJ0476', 4: 'PJDJ0477', 5: 'PJDJ0478', 6: 'PJDJ0479'}
-            assessGrade = [1, 1, 1, 1, 2]
-        elif '实验辅助人员' in self.soup.body.text:
-            assessments = {1: 'PJDJ0441', 2: 'PJDJ0475', 3: 'PJDJ0476', 4: 'PJDJ0477', 5: 'PJDJ0478', 6: 'PJDJ0479'}
-            assessGrade = [1, 1, 1, 2]
+        if '实验' in self.soup.body.text:
+            assessments = {1: 'PJDJ0643', 2: 'PJDJ0644', 3: 'PJDJ0627', 4: 'PJDJ0628', 5: 'PJDJ0629'}
+            assessGrade = [1, 1, 1, 1, 1, 1, 1, 1, 2]
         else:
-            assessments = {1: 'PJDJ0410', 2: 'PJDJ0411', 3: 'PJDJ0382', 4: 'PJDJ0383', 5: 'PJDJ0412', 6: 'PJDJ0385'}
+            assessments = {1: 'PJDJ0592', 2: 'PJDJ0593', 3: 'PJDJ0594', 4: 'PJDJ0605', 5: 'PJDJ0595'}
             assessGrade = [1, 1, 1, 1, 1, 1, 1, 1, 1, 2]
         token['ztpj'] = '老师认真负责'
         token['pgyj'] = '满意'
@@ -149,7 +151,6 @@ class XJTUSpider(Spider):
         token['type'] = '2'
         token['actionType'] = '2'
         print(token)
-        token.pop('zbbm')
         zbbm = []
         name = None
         assessIndex = -1
@@ -162,10 +163,12 @@ class XJTUSpider(Spider):
                 token[item.get('name')] = '20'
             if 'zbbm' in item.get('name'):
                 zbbm.append(item.get('value'))
-        list(set(zbbm))
         payload = list(token.items())
-        for item in zbbm:
-            payload.append(('zbbm', item))
+        if token.get('zbbm') is not None:
+            token.pop('zbbm')
+            list(set(zbbm))
+            for item in zbbm:
+                payload.append(('zbbm', item))
         try:
             url = 'http://ssfw.xjtu.edu.cn/index.portal' + self.soup.find('form', action=True).get('action')
         except AttributeError as e:
@@ -197,9 +200,9 @@ class XJTUSpider(Spider):
         self.jsonStr = json.loads(self.session.get('http://ssfw.xjtu.edu.cn/pnull.portal?.pen=pe1061&.pmn=view&action=optionsRetrieve&className=com.wiscom.app.w5ssfw.pjgl.domain.V_PJGL_XNXQ&namedQueryId=&displayFormat={json}&useBaseFilter=true').text)
 
     def mainCtl(self, week):
-        self.getPostInfo()
+        # self.getPostInfo()
         # print(self.jsonStr, self.jsonStr['options'])
-        self.postForm(postURL='http://ssfw.xjtu.edu.cn/index.portal?.p=Znxjb20ud2lzY29tLnBvcnRhbC5zaXRlLmltcGwuRnJhZ21lbnRXaW5kb3d8ZjExNjF8dmlld3xub3JtYWx8YWN0aW9uPXF1ZXJ5', newSearch='true', pc=self.jsonStr['options'][week]['code'])
+        # self.postForm(postURL='http://ssfw.xjtu.edu.cn/index.portal?.p=Znxjb20ud2lzY29tLnBvcnRhbC5zaXRlLmltcGwuRnJhZ21lbnRXaW5kb3d8ZjExNjF8dmlld3xub3JtYWx8YWN0aW9uPXF1ZXJ5', newSearch='true', pc=self.jsonStr['options'][week]['code'])
         try:
             self.getUrls()
         except requests.HTTPError as e:
