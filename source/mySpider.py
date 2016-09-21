@@ -148,6 +148,7 @@ class XJTUSpider(Spider):
         token['sfytj'] = 'true'
         token['type'] = '2'
         token['actionType'] = '2'
+        print(token)
         token.pop('zbbm')
         zbbm = []
         name = None
@@ -197,13 +198,13 @@ class XJTUSpider(Spider):
 
     def mainCtl(self, week):
         self.getPostInfo()
-        print(self.jsonStr, self.jsonStr['options'])
+        # print(self.jsonStr, self.jsonStr['options'])
         self.postForm(postURL='http://ssfw.xjtu.edu.cn/index.portal?.p=Znxjb20ud2lzY29tLnBvcnRhbC5zaXRlLmltcGwuRnJhZ21lbnRXaW5kb3d8ZjExNjF8dmlld3xub3JtYWx8YWN0aW9uPXF1ZXJ5', newSearch='true', pc=self.jsonStr['options'][week]['code'])
         try:
             self.getUrls()
         except requests.HTTPError as e:
             print(e)
         while self.urls:
-            self.openQueue(function=self.postForm, process=self.teachingAssess, autoCollect=False)
+            self.openQueue(function=self.postForm, process=self.teachingAssess, autoCollect=True)
         if self.fobj is not None:
             self.fobj.fileEnd()
