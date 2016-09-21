@@ -64,9 +64,6 @@ class Spider:
     def getUrls(self):
         raise NotImplementedError
 
-    def getStub(self):
-        return re.findall("direct\\('(.*?)'\\);", self.soup.find('a', onclick=True)['onclick'])[0]
-
     def refresh(self):
         self.currUrl = self.response.url
         self.visited |= {self.currUrl}
@@ -109,7 +106,7 @@ class XJTUSpider(Spider):
 
     def getUrls(self):
         try:
-            for item in self.soup.find('tavle', attrs={'class': 'portlet-table'}).find_all('a', href=True):
+            for item in self.soup.find('table', attrs={'class': 'portlet-table'}).find_all('a', href=True):
                 if item.text != '评教':
                     continue
                 url = item.get('href')
@@ -122,6 +119,12 @@ class XJTUSpider(Spider):
             print("No such class in this page: %s" % self.currUrl)
         except Exception:
             raise Exception
+
+    def getStub(self):
+        """
+        get the stub url from the sneaky redirect page which looks very innocent.
+        """
+        return re.findall("direct\\('(.*?)'\\);", self.soup.find('a', onclick=True)['onclick'])[0]
 
     def teachingAssess(self, token):
         """this function is totally XJTUic.
@@ -167,6 +170,7 @@ class XJTUSpider(Spider):
         except AttributeError as e:
             print(e)
             raise requests.HTTPError['NONONO']
+        print(token)
         return payload, url
 
     def openQueue(self, function=None, *args, **kargs):
@@ -182,7 +186,8 @@ class XJTUSpider(Spider):
                 if function is not None:
                     function(*args, **kargs)
             except Exception:
-                self.fobj.fileEnd()
+                if self.fobj is not None:
+                    self.fobj.fileEnd()
                 traceback.print_exc()
             finally:
                 self.cnt += 1
