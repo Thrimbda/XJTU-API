@@ -2,7 +2,7 @@
 # @Author: Macpotty
 # @Date:   2016-05-22 15:35:19
 # @Last Modified by:   Macpotty
-# @Last Modified time: 2016-09-21 19:04:14
+# @Last Modified time: 2016-09-21 19:19:12
 import requests
 from bs4 import BeautifulSoup
 from collections import deque
@@ -139,42 +139,42 @@ class XJTUSpider(Spider):
 
         use it to do the ting teaching assessment.
         """
-        if '实验' in self.soup.body.text:
-            assessments = {1: 'PJDJ0643', 2: 'PJDJ0644', 3: 'PJDJ0627', 4: 'PJDJ0628', 5: 'PJDJ0629'}
-            assessGrade = [1, 1, 1, 1, 1, 1, 1, 1, 2]
-        else:
-            assessments = {1: 'PJDJ0592', 2: 'PJDJ0593', 3: 'PJDJ0594', 4: 'PJDJ0605', 5: 'PJDJ0595'}
-            assessGrade = [1, 1, 1, 1, 1, 1, 1, 1, 1, 2]
-        token['ztpj'] = '老师认真负责'
-        token['pgyj'] = '满意'
-        token['sfytj'] = 'true'
-        token['type'] = '2'
-        token['actionType'] = '2'
-        print(token)
-        zbbm = []
-        name = None
-        assessIndex = -1
-        for item in self.soup.find('table', id=True).find_all('input', attrs={'name': True, 'value': True}):
-            if 'pfdj' in item.get('name') and item.get('name') != name:
-                name = item.get('name')
-                assessIndex += 1
-                token[name] = assessments[assessGrade[assessIndex]]
-            if 'qz_' in item.get('name'):
-                token[item.get('name')] = '20'
-            if 'zbbm' in item.get('name'):
-                zbbm.append(item.get('value'))
-        payload = list(token.items())
         if token.get('zbbm') is not None:
             token.pop('zbbm')
+            if '实验' in self.soup.body.text:
+                assessments = {1: 'PJDJ0643', 2: 'PJDJ0644', 3: 'PJDJ0627', 4: 'PJDJ0628', 5: 'PJDJ0629'}
+                assessGrade = [1, 1, 1, 1, 1, 1, 1, 1, 2]
+            else:
+                assessments = {1: 'PJDJ0592', 2: 'PJDJ0593', 3: 'PJDJ0594', 4: 'PJDJ0605', 5: 'PJDJ0595'}
+                assessGrade = [1, 1, 1, 1, 1, 1, 1, 1, 1, 2]
+            token['ztpj'] = '老师认真负责'
+            token['pgyj'] = '满意'
+            token['sfytj'] = 'true'
+            token['type'] = '2'
+            token['actionType'] = '2'
+            print(token)
+            zbbm = []
+            name = None
+            assessIndex = -1
+            for item in self.soup.find('table', id=True).find_all('input', attrs={'name': True, 'value': True}):
+                if 'pfdj' in item.get('name') and item.get('name') != name:
+                    name = item.get('name')
+                    assessIndex += 1
+                    token[name] = assessments[assessGrade[assessIndex]]
+                if 'qz_' in item.get('name'):
+                    token[item.get('name')] = '20'
+                if 'zbbm' in item.get('name'):
+                    zbbm.append(item.get('value'))
+            payload = list(token.items())
             list(set(zbbm))
             for item in zbbm:
                 payload.append(('zbbm', item))
-        try:
-            url = 'http://ssfw.xjtu.edu.cn/index.portal' + self.soup.find('form', action=True).get('action')
-        except AttributeError as e:
-            print(e)
-            raise requests.HTTPError['NONONO']
-        print(token)
+            try:
+                url = 'http://ssfw.xjtu.edu.cn/index.portal' + self.soup.find('form', action=True).get('action')
+            except AttributeError as e:
+                print(e)
+                raise requests.HTTPError['NONONO']
+            print(token)
         return payload, url
 
     def openQueue(self, function=None, *args, **kargs):
