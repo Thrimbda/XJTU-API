@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 # @Author: Macpotty
 # @Date:   2016-09-17 13:24:41
-# @Last Modified by:   Macpotty
-# @Last Modified time: 2016-09-17 13:37:34
+# @Last Modified by:   Michael
+# @Last Modified time: 2016-09-23 01:40:31
 import traceback
 
 
@@ -38,6 +38,7 @@ class A(object):
     @test
     def foo(self):
         print('asdasd')
+
 
 if __name__ == '__main__':
     a = A

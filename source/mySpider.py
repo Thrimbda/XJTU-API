@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 # @Author: Macpotty
 # @Date:   2016-05-22 15:35:19
-# @Last Modified by:   Macpotty
-# @Last Modified time: 2016-09-21 19:19:12
+# @Last Modified by:   Michael
+# @Last Modified time: 2016-09-23 01:37:12
 import requests
 from bs4 import BeautifulSoup
 from collections import deque
@@ -174,7 +174,7 @@ class XJTUSpider(Spider):
             except AttributeError as e:
                 print(e)
                 raise requests.HTTPError['NONONO']
-            print(token)
+            print(payload)
         return payload, url
 
     def openQueue(self, function=None, *args, **kargs):
