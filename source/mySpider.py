@@ -2,7 +2,7 @@
 # @Author: Macpotty
 # @Date:   2016-05-22 15:35:19
 # @Last Modified by:   Michael
-# @Last Modified time: 2016-09-23 01:37:12
+# @Last Modified time: 2016-09-23 01:44:01
 import requests
 from bs4 import BeautifulSoup
 from collections import deque
@@ -199,7 +199,7 @@ class XJTUSpider(Spider):
     def getPostInfo(self):
         self.jsonStr = json.loads(self.session.get('http://ssfw.xjtu.edu.cn/pnull.portal?.pen=pe1061&.pmn=view&action=optionsRetrieve&className=com.wiscom.app.w5ssfw.pjgl.domain.V_PJGL_XNXQ&namedQueryId=&displayFormat={json}&useBaseFilter=true').text)
 
-    def mainCtl(self, week):
+    def mainCtl(self):
         # self.getPostInfo()
         # print(self.jsonStr, self.jsonStr['options'])
         # self.postForm(postURL='http://ssfw.xjtu.edu.cn/index.portal?.p=Znxjb20ud2lzY29tLnBvcnRhbC5zaXRlLmltcGwuRnJhZ21lbnRXaW5kb3d8ZjExNjF8dmlld3xub3JtYWx8YWN0aW9uPXF1ZXJ5', newSearch='true', pc=self.jsonStr['options'][week]['code'])
