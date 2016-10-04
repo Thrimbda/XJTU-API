@@ -2,7 +2,7 @@
 # @Author: Macpotty
 # @Date:   2016-05-22 15:35:19
 # @Last Modified by:   Michael
-# @Last Modified time: 2016-10-04 01:38:31
+# @Last Modified time: 2016-10-04 18:09:40
 import requests
 from bs4 import BeautifulSoup
 from collections import deque
@@ -15,6 +15,9 @@ import json
 
 
 class Spider:
+    """
+    @brief      Class for spider.
+    """
     def __init__(self, url, record=False):
         self._session = requests.Session()
         self._headers = {'Connection': 'keep-alive',
@@ -30,7 +33,7 @@ class Spider:
         self.response = self._session.get(self.rootUrl)
         if self.response.status_code != 200:
             self.response.raise_for_status()
-        self.__soup = BeautifulSoup(self.response.text, 'html.parser')
+        self._soup = BeautifulSoup(self.response.text, 'html.parser')
         self.urls = deque()
         self.urls.append(self.rootUrl)
         self.visited = set()
@@ -39,6 +42,9 @@ class Spider:
         self.fobj = None
         if record:
             self.fobj = FileModule.FileModule()
+
+    def _soupGen(self):
+        self._soup = BeautifulSoup(self.response.text, 'html.parser')
 
     def postForm(self, process=None, autoCollect=True, postURL=None, **payload):
         if autoCollect:
@@ -54,13 +60,13 @@ class Spider:
         print(payload)
         if self.response.status_code != 200:
             self.response.raise_for_status()
-        self._soup = BeautifulSoup(self.response.text, 'html.parser')
+        self._soupGen()
 
     def getSite(self, url):
         self.currUrl = url
         self.visited |= {self.currUrl}
-        self.response = self._session.get(self.currUrl, headers=self.headers)
-        self._soup = BeautifulSoup(self.response.text, 'html.parser')
+        self.response = self._session.get(self.currUrl, headers=self._headers)
+        self._soupGen()
 
     def getUrls(self):
         raise NotImplementedError
@@ -68,8 +74,8 @@ class Spider:
     def refresh(self):
         self.currUrl = self.response.url
         self.visited |= {self.currUrl}
-        self.response = self._session.get(self.currUrl, headers=self.headers)
-        self._soup = BeautifulSoup(self.response.text, 'html.parser')
+        self.response = self._session.get(self.currUrl, headers=self._headers)
+        self._soupGen()
 
     def openQueue(self, function=None, *args, **kargs):
         try:
@@ -101,40 +107,40 @@ class Spider:
 
 
 class XJTUSpider(Spider):
-    """docstring for XJTUSpider"""
+    """
+    A spider form of XJTU sites API
+    single thread, but will extend to muti-thread after.
+    """
     def __init__(self, url, record=False):
-        super(XJTUSpider, self).__init__(url, False)
-        self.teachingAssessModule = utils.teachingAssess(self._soup)
+        self.rootUrl = 'http://' + url + '.xjtu.edu.cn/'
+        self.service = url
+        super(XJTUSpider, self).__init__(self.rootUrl, False)
+        self.teachingAssessModule = utils.TeachingAssessUtil(self._soup)
+
+    def _soupGen(self):
+        super(XJTUSpider, self)._soupGen()
+        self.teachingAssessModule.update(self._soup)
+
+    def getSoup(self):
+        return self._soup
 
     def login(self, username, password):
-        self.postForm(username=username, password=password, postURL='https://cas.xjtu.edu.cn/login?service=http%3A%2F%2F' + self.rootUrl + '%2Findex.portal')
+        self.getSite('https://cas.xjtu.edu.cn/login?service=http%3A%2F%2F' + self.service + '.xjtu.edu.cn%2Findex.portal')
+        self.postForm(username=username, password=password, postURL='https://cas.xjtu.edu.cn/login?service=http%3A%2F%2F' + self.service + '.xjtu.edu.cn%2Findex.portal')
         self.getSite(self._getStub())
+        print(self._soup.text)
 
     def logout(self):
         self.getSite(self.rootUrl + '/logout.portal')
 
-# unfinished!!!!
-    def teachingAssess(self, wtf=False):
-        self.teachingAssessModule.update(self._soup)
-        if not wtf:
-            self.postForm(process=self.teachingAssessModule._teachingAssessPayload.getTeachingAssessPayload, autoCollect=True)
-# unfinished!!!
-
-    def _getUrls(self):
-        try:
-            for item in self._soup.find('table', attrs={'class': 'portlet-table'}).find_all('a', href=True):
-                if item.text != '评教':
-                    continue
-                url = item.get('href')
-                self.urls.append('http://ssfw.xjtu.edu.cn/index.portal' + url)
-                print('appended queue --->' + url)
-        except AttributeError as e:
-            print(self.response)
-            print(self.response.status_code)
-            print(e)
-            print("No such class in this page: %s" % self.currUrl)
-        except Exception:
-            raise Exception
+    def teachingAssess(self, autoMode=True):
+        self.getSite('http://ssfw.xjtu.edu.cn/index.portal?.pn=p1142_p1182_p1183')
+        self.urls.extend(self.teachingAssessModule.getTeachingAssessUrls())
+        if not autoMode:
+            pass
+        else:
+            while self.urls:
+                self.openQueue(function=self.postForm, process=self.teachingAssessModule.getTeachingAssessPayload)
 
     def _getStub(self):
         """
@@ -146,9 +152,6 @@ class XJTUSpider(Spider):
         self.jsonStr = json.loads(self._session.get('http://ssfw.xjtu.edu.cn/pnull.portal?.pen=pe1061&.pmn=view&action=optionsRetrieve&className=com.wiscom.app.w5ssfw.pjgl.domain.V_PJGL_XNXQ&namedQueryId=&displayFormat={json}&useBaseFilter=true').text)
 
     def mainCtl(self):
-        # self.getPostInfo()
-        # print(self.jsonStr, self.jsonStr['options'])
-        # self.postForm(postURL='http://ssfw.xjtu.edu.cn/index.portal?.p=Znxjb20ud2lzY29tLnBvcnRhbC5zaXRlLmltcGwuRnJhZ21lbnRXaW5kb3d8ZjExNjF8dmlld3xub3JtYWx8YWN0aW9uPXF1ZXJ5', newSearch='true', pc=self.jsonStr['options'][week]['code'])
         try:
             self.getUrls()
         except requests.HTTPError as e:

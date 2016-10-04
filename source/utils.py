@@ -2,8 +2,10 @@
 # @Author: Michael
 # @Date:   2016-10-04 01:01:58
 # @Last Modified by:   Michael
-# @Last Modified time: 2016-10-04 01:31:56
+# @Last Modified time: 2016-10-04 17:56:57
 import requests
+import traceback
+from collections import deque
 
 
 class BaseUtil(object):
@@ -18,8 +20,7 @@ class BaseUtil(object):
 
 class TeachingAssessUtil(BaseUtil):
     def __init__(self, soup):
-        super(TeachingAssessUtil, self).__init__()
-        self._soup = soup
+        super(TeachingAssessUtil, self).__init__(soup)
 
     def assessmentsGen(self):
         assessments = {}
@@ -71,3 +72,23 @@ class TeachingAssessUtil(BaseUtil):
                 raise requests.HTTPError['NONONO']
             print(payload)
         return payload, url
+
+    def getTeachingAssessUrls(self):
+        urls = deque()
+        try:
+            for item in self._soup.find('table', attrs={'class': 'portlet-table'}).find_all('a', href=True):
+                if item.text != '评教':
+                    continue
+                url = item.get('href')
+                urls.append('http://ssfw.xjtu.edu.cn/index.portal' + url)
+                print('appended queue --->' + url)
+            return urls
+        except AttributeError as e:
+            print(self.response)
+            print(self.response.status_code)
+            print(e)
+            print("No such class in this page: %s" % self.currUrl)
+        except requests.HTTPError as e:
+            traceback.print_exc()
+        except Exception:
+            raise Exception

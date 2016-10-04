@@ -2,7 +2,7 @@
 > this is a spider for myself to practice under MIT Licence.
 
 ### require
-mySpider is build on bs4 and requests using python3 program lauguage.
+mySpider is build on bs4 and requests using python3 programming lauguage.
 ### what can it do?
 for now I'm using it do something with my uni's website.
 it can also do normal grab things like other spiders do.
