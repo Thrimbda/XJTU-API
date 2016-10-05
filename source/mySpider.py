@@ -2,7 +2,7 @@
 # @Author: Macpotty
 # @Date:   2016-05-22 15:35:19
 # @Last Modified by:   Michael
-# @Last Modified time: 2016-10-04 18:40:02
+# @Last Modified time: 2016-10-05 12:02:36
 import requests
 from bs4 import BeautifulSoup
 from collections import deque
@@ -19,21 +19,21 @@ class Spider:
     @brief      Class for spider.
     """
     def __init__(self, url, record=False):
-        self.__session = requests.Session()
-        self.__headers = {'Connection': 'keep-alive',
-                          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-                          'Accept-Encoding': 'gzip',
-                          'Accept-Language': 'zh-CN,zh;q=0.8',
-                          'Referer': 'https://www.baidu.com/link?url=YEhWaYGOPw1mlBWWji4kqYkbuQYoRfmYE94YXDz7Dwm&wd=&eqid=d69a671b000e59e70000000357406ffe',
-                          'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.86 Safari/537.36',
-                          # 'X-Requested-With': 'XMLHttpRequest'
-                          }
+        self.session = requests.Session()
+        self.headers = {'Connection': 'keep-alive',
+                        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+                        'Accept-Encoding': 'gzip',
+                        'Accept-Language': 'zh-CN,zh;q=0.8',
+                        'Referer': 'https://www.baidu.com/link?url=YEhWaYGOPw1mlBWWji4kqYkbuQYoRfmYE94YXDz7Dwm&wd=&eqid=d69a671b000e59e70000000357406ffe',
+                        'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.86 Safari/537.36',
+                        # 'X-Requested-With': 'XMLHttpRequest'
+                        }
         self.rootUrl = url
         self.currUrl = self.rootUrl
-        self.response = self.__session.get(self.rootUrl)
+        self.response = self.session.get(self.rootUrl)
         if self.response.status_code != 200:
             self.response.raise_for_status()
-        self.__soup = BeautifulSoup(self.response.text, 'html.parser')
+        self.soup = BeautifulSoup(self.response.text, 'html.parser')
         self.urls = deque()
         self.urls.append(self.rootUrl)
         self.visited = set()
@@ -43,30 +43,30 @@ class Spider:
         if record:
             self.fobj = FileModule.FileModule()
 
-    def __soupGen(self):
-        self.__soup = BeautifulSoup(self.response.text, 'html.parser')
+    def soupGen(self):
+        self.soup = BeautifulSoup(self.response.text, 'html.parser')
 
     def postForm(self, process=None, autoCollect=True, postURL=None, **payload):
         if autoCollect:
             token = {}
-            for i in self.__soup.find_all('input', type='hidden', value=True):
+            for i in self.soup.find_all('input', type='hidden', value=True):
                 token[i.get('name')] = i.get('value')
             payload = dict(token, **payload)
         if process is not None:
             payload, self.currUrl = process(payload)
         if postURL is None:
             postURL = self.currUrl
-        self.response = self.__session.post(postURL, data=payload, headers=self.__headers)
-        print(payload)
+        self.response = self.session.post(postURL, data=payload, headers=self.headers)
+        # print(payload)
         if self.response.status_code != 200:
             self.response.raise_for_status()
-        self.__soupGen()
+        self.soupGen()
 
     def getSite(self, url):
         self.currUrl = url
         self.visited |= {self.currUrl}
-        self.response = self.__session.get(self.currUrl, headers=self.__headers)
-        self.__soupGen()
+        self.response = self.session.get(self.currUrl, headers=self.headers)
+        self.soupGen()
 
     def getUrls(self):
         raise NotImplementedError
@@ -74,8 +74,8 @@ class Spider:
     def refresh(self):
         self.currUrl = self.response.url
         self.visited |= {self.currUrl}
-        self.response = self.__session.get(self.currUrl, headers=self.__headers)
-        self.__soupGen()
+        self.response = self.session.get(self.currUrl, headers=self.headers)
+        self.soupGen()
 
     def openQueue(self, function=None, *args, **kargs):
         try:
@@ -115,20 +115,19 @@ class XJTUSpider(Spider):
         self.rootUrl = 'http://' + url + '.xjtu.edu.cn/'
         self.service = url
         super(XJTUSpider, self).__init__(self.rootUrl, False)
-        self.teachingAssessModule = utils.TeachingAssessUtil(self.__soup)
+        self.teachingAssessModule = utils.TeachingAssessUtil(self.soup)
 
-    def __soupGen(self):
-        super(XJTUSpider, self).__soupGen()
-        self.teachingAssessModule.update(self.__soup)
+    def soupGen(self):
+        super(XJTUSpider, self).soupGen()
+        self.teachingAssessModule.update(self.soup)
 
     def getSoup(self):
-        return self.__soup
+        return self.soup
 
     def login(self, username, password):
         self.getSite('https://cas.xjtu.edu.cn/login?service=http%3A%2F%2F' + self.service + '.xjtu.edu.cn%2Findex.portal')
         self.postForm(username=username, password=password, postURL='https://cas.xjtu.edu.cn/login?service=http%3A%2F%2F' + self.service + '.xjtu.edu.cn%2Findex.portal')
         self.getSite(self.__getStub())
-        print(self.__soup.text)
 
     def logout(self):
         self.getSite(self.rootUrl + '/logout.portal')
@@ -146,10 +145,10 @@ class XJTUSpider(Spider):
         """
         get the stub url from the sneaky redirect page which looks very innocent.
         """
-        return re.findall("direct\\('(.*?)'\\);", self.__soup.find('a', onclick=True)['onclick'])[0]
+        return re.findall("direct\\('(.*?)'\\);", self.soup.find('a', onclick=True)['onclick'])[0]
 
     def __getPostInfo(self):
-        self.jsonStr = json.loads(self.__session.get('http://ssfw.xjtu.edu.cn/pnull.portal?.pen=pe1061&.pmn=view&action=optionsRetrieve&className=com.wiscom.app.w5ssfw.pjgl.domain.V_PJGL_XNXQ&namedQueryId=&displayFormat={json}&useBaseFilter=true').text)
+        self.jsonStr = json.loads(self.session.get('http://ssfw.xjtu.edu.cn/pnull.portal?.pen=pe1061&.pmn=view&action=optionsRetrieve&className=com.wiscom.app.w5ssfw.pjgl.domain.V_PJGL_XNXQ&namedQueryId=&displayFormat={json}&useBaseFilter=true').text)
 
     def mainCtl(self):
         try:

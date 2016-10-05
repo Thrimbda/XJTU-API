@@ -2,7 +2,7 @@
 # @Author: Michael
 # @Date:   2016-10-04 01:01:58
 # @Last Modified by:   Michael
-# @Last Modified time: 2016-10-04 18:40:48
+# @Last Modified time: 2016-10-05 12:14:33
 import requests
 import traceback
 from collections import deque
@@ -12,10 +12,10 @@ class BaseUtil(object):
     """docstring for BaseUtil"""
     def __init__(self, soup):
         super(BaseUtil, self).__init__()
-        self.__soup = soup
+        self.soup = soup
 
     def update(self, soup):
-        self.__soup = soup
+        self.soup = soup
 
 
 class TeachingAssessUtil(BaseUtil):
@@ -24,8 +24,10 @@ class TeachingAssessUtil(BaseUtil):
 
     def assessmentsGen(self):
         assessments = {}
-        for item in self.__soup.find('table', attrs={'class': 'portlet-table'}).tr.find_all('td', style='vertical-align:middle'):
-            assessments[item.div.input.get('name')] = item.div.input.get('value')
+        for index, value in enumerate(self.soup.find('table', attrs={'class': 'portlet-table'}).find_all('tr')[2].find_all('td')[3:]):
+            if value.div is not None:
+                print(value)
+                assessments[index + 1] = value.div.input.get('value')
         return assessments
 
     def getTeachingAssessPayload(self, token):
@@ -37,11 +39,11 @@ class TeachingAssessUtil(BaseUtil):
         """
         if token.get('zbbm') is not None:
             token.pop('zbbm')
-            if '实验' in self.__soup.body.text:
-                assessments = {1: 'PJDJ0643', 2: 'PJDJ0644', 3: 'PJDJ0627', 4: 'PJDJ0628', 5: 'PJDJ0629'}
+            if '实验' in self.soup.body.text:
+                assessments = self.assessmentsGen()
                 assessGrade = [1, 1, 1, 1, 1, 1, 1, 1, 2]
             else:
-                assessments = {1: 'PJDJ0592', 2: 'PJDJ0593', 3: 'PJDJ0594', 4: 'PJDJ0605', 5: 'PJDJ0595'}
+                assessments = self.assessmentsGen()
                 assessGrade = [1, 1, 1, 1, 1, 1, 1, 1, 1, 2]
             token['ztpj'] = '老师认真负责'
             token['pgyj'] = '满意'
@@ -52,7 +54,7 @@ class TeachingAssessUtil(BaseUtil):
             zbbm = []
             name = None
             assessIndex = -1
-            for item in self.__soup.find('table', id=True).find_all('input', attrs={'name': True, 'value': True}):
+            for item in self.soup.find('table', id=True).find_all('input', attrs={'name': True, 'value': True}):
                 if 'pfdj' in item.get('name') and item.get('name') != name:
                     name = item.get('name')
                     assessIndex += 1
@@ -66,7 +68,7 @@ class TeachingAssessUtil(BaseUtil):
             for item in zbbm:
                 payload.append(('zbbm', item))
             try:
-                url = 'http://ssfw.xjtu.edu.cn/index.portal' + self.__soup.find('form', action=True).get('action')
+                url = 'http://ssfw.xjtu.edu.cn/index.portal' + self.soup.find('form', action=True).get('action')
             except AttributeError as e:
                 print(e)
                 raise requests.HTTPError['NONONO']
@@ -76,7 +78,7 @@ class TeachingAssessUtil(BaseUtil):
     def getTeachingAssessUrls(self):
         urls = deque()
         try:
-            for item in self.__soup.find('table', attrs={'class': 'portlet-table'}).find_all('a', href=True):
+            for item in self.soup.find('table', attrs={'class': 'portlet-table'}).find_all('a', href=True):
                 if item.text != '评教':
                     continue
                 url = item.get('href')
