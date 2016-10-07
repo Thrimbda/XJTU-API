@@ -2,9 +2,10 @@
 # @Author: Michael
 # @Date:   2016-10-04 01:01:58
 # @Last Modified by:   Michael
-# @Last Modified time: 2016-10-05 12:14:33
+# @Last Modified time: 2016-10-08 03:01:46
 import requests
 import traceback
+import components
 from collections import deque
 
 
@@ -94,3 +95,34 @@ class TeachingAssessUtil(BaseUtil):
             traceback.print_exc()
         except Exception:
             raise Exception
+
+
+class ScheduleUtil(BaseUtil):
+    """docstring for ScheduleUtil"""
+    def __init__(self, soup):
+        super(ScheduleUtil, self).__init__(soup)
+        self.schedule = components.ScheduleComp()
+
+    def scheduleGen(self):
+        self.schedule.name = self.soup.find('td', attrs={'class': 'SStitleTd'}).div.text
+        for row, item in enumerate(self.soup.find('table', id='queryForm').find_all('tr')):
+            if item.th is not None:
+                for vol, value in enumerate(item.find_all('th', attrs={'class': False})):
+                    self.schedule.schedule[row][vol] = value.text.replace('\n', '').replace('\xa0', '')
+            else:
+                for vol, value in enumerate(item.find_all('td', attrs={'class': False})):
+                    if self.schedule.schedule[row][vol] == '':
+                        self.schedule.schedule[row][vol] = value.text.replace('\n', '').replace('\xa0', '')
+                        if(self.schedule.schedule[row][vol]) != '':
+                            self.schedule.timetable[row][vol] = False
+                        if value['rowspan'] == '2':
+                            self.schedule.schedule[row + 1][vol] = value.text.replace('\n', '').replace('\xa0', '')
+                            self.schedule.timetable[row + 1][vol] = False
+            if row == 11:
+                break
+
+    # def timetableGen(self):
+    #     for i in range(len(self.schedule.schedule)):
+    #         for j in range(len(self.schedule.schedule[0])):
+    #             if self.schedule.schedule[i][j] != '':
+    #                 self.schedule.timetable[i][j] = False

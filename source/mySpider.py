@@ -2,7 +2,7 @@
 # @Author: Macpotty
 # @Date:   2016-05-22 15:35:19
 # @Last Modified by:   Michael
-# @Last Modified time: 2016-10-05 12:02:36
+# @Last Modified time: 2016-10-08 02:59:45
 import requests
 from bs4 import BeautifulSoup
 from collections import deque
@@ -116,10 +116,12 @@ class XJTUSpider(Spider):
         self.service = url
         super(XJTUSpider, self).__init__(self.rootUrl, False)
         self.teachingAssessModule = utils.TeachingAssessUtil(self.soup)
+        self.scheduleModule = utils.ScheduleUtil(self.soup)
 
     def soupGen(self):
         super(XJTUSpider, self).soupGen()
         self.teachingAssessModule.update(self.soup)
+        self.scheduleModule.update(self.soup)
 
     def getSoup(self):
         return self.soup
@@ -140,6 +142,12 @@ class XJTUSpider(Spider):
         else:
             while self.urls:
                 self.openQueue(function=self.postForm, process=self.teachingAssessModule.getTeachingAssessPayload)
+
+    def schedule(self):
+        self.getSite('http://ssfw.xjtu.edu.cn/pnull.portal?.pen=pe801&.f=f1821&action=print&executeName=print&xnxqdm=20161&newSearch=true')
+        self.scheduleModule.scheduleGen()
+        print(self.scheduleModule.schedule.timetable)
+        print(self.scheduleModule.schedule.schedule)
 
     def __getStub(self):
         """

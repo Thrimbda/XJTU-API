@@ -2,19 +2,37 @@
 # @Author: Michael
 # @Date:   2016-10-05 11:35:00
 # @Last Modified by:   Michael
-# @Last Modified time: 2016-10-05 12:16:41
+# @Last Modified time: 2016-10-08 03:00:46
 
 
-class AssessComp(object):
+class BaseComp(object):
+    """docstring for BaseComp"""
+    name = None
+    url = None
+
+    def __init__(self):
+        super(BaseComp, self).__init__()
+
+    def getName(self):
+        return self.name
+
+
+class AssessComp(BaseComp):
     """docstring for AssessComp"""
     ztpj = None
     # overall evaluation
     pjyj = None
     # assess opinion
-    url = None
-    # url of the assessment
     fraction = {}
 
-    def __init__(self, url):
+    def __init__(self):
         super(AssessComp, self).__init__()
-        self.url = url
+
+
+class ScheduleComp(BaseComp):
+    """docstring for ScheduleComp"""
+
+    def __init__(self):
+        super(ScheduleComp, self).__init__()
+        self.schedule = [['' for i in range(8)] for j in range(12)]
+        self.timetable = [[True for i in range(8)] for j in range(12)]
