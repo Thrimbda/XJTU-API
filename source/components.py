@@ -2,13 +2,12 @@
 # @Author: Michael
 # @Date:   2016-10-05 11:35:00
 # @Last Modified by:   Michael
-# @Last Modified time: 2016-10-08 03:00:46
+# @Last Modified time: 2016-10-08 10:41:56
 
 
 class BaseComp(object):
     """docstring for BaseComp"""
     name = None
-    url = None
 
     def __init__(self):
         super(BaseComp, self).__init__()
@@ -25,8 +24,9 @@ class AssessComp(BaseComp):
     # assess opinion
     fraction = {}
 
-    def __init__(self):
+    def __init__(self, url):
         super(AssessComp, self).__init__()
+        self.url = url
 
 
 class ScheduleComp(BaseComp):

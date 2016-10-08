@@ -2,7 +2,7 @@
 # @Author: Michael
 # @Date:   2016-10-04 01:01:58
 # @Last Modified by:   Michael
-# @Last Modified time: 2016-10-08 03:01:46
+# @Last Modified time: 2016-10-08 14:42:02
 import requests
 import traceback
 import components
@@ -22,14 +22,22 @@ class BaseUtil(object):
 class TeachingAssessUtil(BaseUtil):
     def __init__(self, soup):
         super(TeachingAssessUtil, self).__init__(soup)
+        self.assessComps = []
 
     def assessmentsGen(self):
         assessments = {}
         for index, value in enumerate(self.soup.find('table', attrs={'class': 'portlet-table'}).find_all('tr')[2].find_all('td')[3:]):
             if value.div is not None:
                 print(value)
-                assessments[index + 1] = value.div.input.get('value')
+                assessments[5 - index] = value.div.input.get('value')
         return assessments
+
+    def assessmentsContentGen(self):
+        assessmentsContent = {}
+        for row in self.soup.find('table', attrs={'class': 'portlet-table'}).find_all('tr')[2:-2]:
+            print(row.find_all('td'))
+            assessmentsContent[row.find_all('td')[2].text.strip()] = 5
+        return assessmentsContent
 
     def getTeachingAssessPayload(self, token):
         """this function is totally XJTUic.
@@ -113,7 +121,7 @@ class ScheduleUtil(BaseUtil):
                 for vol, value in enumerate(item.find_all('td', attrs={'class': False})):
                     if self.schedule.schedule[row][vol] == '':
                         self.schedule.schedule[row][vol] = value.text.replace('\n', '').replace('\xa0', '')
-                        if(self.schedule.schedule[row][vol]) != '':
+                        if vol != 0 and self.schedule.schedule[row][vol] != '':
                             self.schedule.timetable[row][vol] = False
                         if value['rowspan'] == '2':
                             self.schedule.schedule[row + 1][vol] = value.text.replace('\n', '').replace('\xa0', '')
@@ -121,8 +129,5 @@ class ScheduleUtil(BaseUtil):
             if row == 11:
                 break
 
-    # def timetableGen(self):
-    #     for i in range(len(self.schedule.schedule)):
-    #         for j in range(len(self.schedule.schedule[0])):
-    #             if self.schedule.schedule[i][j] != '':
-    #                 self.schedule.timetable[i][j] = False
+    def getWebSchedule(self):
+        return str(self.soup.find('table', id='queryForm'))

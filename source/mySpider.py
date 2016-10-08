@@ -2,7 +2,7 @@
 # @Author: Macpotty
 # @Date:   2016-05-22 15:35:19
 # @Last Modified by:   Michael
-# @Last Modified time: 2016-10-08 02:59:45
+# @Last Modified time: 2016-10-08 10:24:39
 import requests
 from bs4 import BeautifulSoup
 from collections import deque
@@ -146,8 +146,7 @@ class XJTUSpider(Spider):
     def schedule(self):
         self.getSite('http://ssfw.xjtu.edu.cn/pnull.portal?.pen=pe801&.f=f1821&action=print&executeName=print&xnxqdm=20161&newSearch=true')
         self.scheduleModule.scheduleGen()
-        print(self.scheduleModule.schedule.timetable)
-        print(self.scheduleModule.schedule.schedule)
+        return self.scheduleModule.schedule
 
     def __getStub(self):
         """
