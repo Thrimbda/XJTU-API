@@ -2,7 +2,7 @@
 # @Author: Michael
 # @Date:   2016-10-04 01:01:58
 # @Last Modified by:   Michael
-# @Last Modified time: 2016-10-08 14:42:02
+# @Last Modified time: 2016-10-08 15:35:02
 import requests
 import traceback
 import components
@@ -50,10 +50,10 @@ class TeachingAssessUtil(BaseUtil):
             token.pop('zbbm')
             if '实验' in self.soup.body.text:
                 assessments = self.assessmentsGen()
-                assessGrade = [1, 1, 1, 1, 1, 1, 1, 1, 2]
+                assessGrade = [5, 5, 5, 5, 5, 5, 5, 5, 4]
             else:
                 assessments = self.assessmentsGen()
-                assessGrade = [1, 1, 1, 1, 1, 1, 1, 1, 1, 2]
+                assessGrade = [5, 5, 5, 5, 5, 5, 5, 5, 5, 4]
             token['ztpj'] = '老师认真负责'
             token['pgyj'] = '满意'
             token['sfytj'] = 'true'
