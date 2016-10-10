@@ -27,7 +27,11 @@ it can also do normal grab things like other spiders do.
         mySpider = XJTUSpider('ssfw')
         mySpider.login(username='YOUR_USER_NAME', password='YOUR_PASS_WORD')
         mySpider.teachingAssess() # auto assess mode. or use specific assess mod
-        # mySpider.teachingAssess(autoMode=False, index=0, fraction=[5,5,5,5,5,5,5,5,5,4], pgyj='YOUR_ASSESS_IDEA', ztpj='YOUR_SAMMARY')
+        # mySpider.teachingAssess(autoMode=False,
+                                  index=0,
+                                  fraction=[5,5,5,5,5,5,5,5,5,4],
+                                  pgyj='YOUR_ASSESS_IDEA',
+                                  ztpj='YOUR_SAMMARY')
         mySpider.logout()
 
     ##### **XJTUSpider.teachingAssess(self, autoMode=True, index=None, fraction=None, pgyj=None, ztpj=None)**
