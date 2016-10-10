@@ -1,4 +1,4 @@
-# XJTU-API(implement using spider)
+# XJTU-API(implement with a spider)
 > this is a spider for myself to practice under MIT Licence.
 
 ### require
