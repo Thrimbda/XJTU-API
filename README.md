@@ -10,6 +10,8 @@ it can also do normal grab things like other spiders do.
 * get your schedule(form of python list object)
     * use schedule() method to generate your schedule object.
     * use schedule and timetable(time available) derictly.
+
+    ##### example:
         XJTUSpider('ssfw').scheduleModule.schedule.schedule
         XJTUSpider('ssfw').scheduleModule.schedule.timetable
 
@@ -18,13 +20,28 @@ it can also do normal grab things like other spiders do.
     1. touch a new file named "main.py"(or anything you want, name doesn't matter).
     2. instantiated a XJTUSpider with string param 'ssfw'
     3. login
-    4. use method teachingAssess
+    4. use method XJTUSpider.teachingAssess()
     5. done!
+    
+    ###### XJTUSpider.teachingAssess(self, autoMode=True, index=None, fraction=None, pgyj=None, ztpj=None)
+    if auto mode is true, then you'd place noting in the method.
+    if not, then declare autoMode=False and give the mothod index of assessment, fraction, idea and sammary.
+    *Don't worry if you got no index and assessments info*
+    just don't give the method the info you don't know, it will list options for you.
+
+    like this:
+
+        mySpider.teachingAssess(autoMode=False)
+    will print and return assessments for you.
+
+        mySpider.teachingAssess(autoMode=False, index=0)
+    will print and return fraction options for you.
 
     ##### example:
         mySpider = XJTUSpider('ssfw')
         mySpider.login(username='YOUR_USER_NAME', password='YOUR_PASS_WORD')
-        mySpider.teachingAssess()
+        mySpider.teachingAssess() # auto assess mode. or use specific assess mod
+        # mySpider.teachingAssess(autoMode=False, index=0, fraction=[5,5,5,5,5,5,5,5,5,4], pgyj='YOUR_ASSESS_IDEA', ztpj='YOUR_SAMMARY')
         mySpider.logout()
 
 ### problem

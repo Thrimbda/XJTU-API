@@ -2,7 +2,7 @@
 # @Author: Michael
 # @Date:   2016-10-04 01:01:58
 # @Last Modified by:   Michael
-# @Last Modified time: 2016-10-08 15:35:02
+# @Last Modified time: 2016-10-11 00:06:02
 import requests
 import traceback
 import components
@@ -22,69 +22,71 @@ class BaseUtil(object):
 class TeachingAssessUtil(BaseUtil):
     def __init__(self, soup):
         super(TeachingAssessUtil, self).__init__(soup)
-        self.assessComps = []
+        self.assessObjs = []
 
     def assessmentsGen(self):
         assessments = {}
         for index, value in enumerate(self.soup.find('table', attrs={'class': 'portlet-table'}).find_all('tr')[2].find_all('td')[3:]):
             if value.div is not None:
-                print(value)
                 assessments[5 - index] = value.div.input.get('value')
         return assessments
 
     def assessmentsContentGen(self):
-        assessmentsContent = {}
-        for row in self.soup.find('table', attrs={'class': 'portlet-table'}).find_all('tr')[2:-2]:
-            print(row.find_all('td'))
-            assessmentsContent[row.find_all('td')[2].text.strip()] = 5
+        assessmentsContent = []
+        for row in self.soup.find('table', attrs={'class': 'portlet-table'}).find_all('tr')[2:-1]:
+            assessmentsContent.append([row.find_all('td')[2].text.strip(), 5])
+        assessmentsContent[-1][1] = 4
         return assessmentsContent
 
-    def getTeachingAssessPayload(self, token):
+    def teachingAssessPayloadGen(self, token):
         """this function is totally XJTUic.
            once administrator change those value of checkboxes.
            we done.
 
         use it to do the ting teaching assessment.
         """
-        if token.get('zbbm') is not None:
-            token.pop('zbbm')
-            if '实验' in self.soup.body.text:
-                assessments = self.assessmentsGen()
-                assessGrade = [5, 5, 5, 5, 5, 5, 5, 5, 4]
-            else:
-                assessments = self.assessmentsGen()
-                assessGrade = [5, 5, 5, 5, 5, 5, 5, 5, 5, 4]
-            token['ztpj'] = '老师认真负责'
-            token['pgyj'] = '满意'
-            token['sfytj'] = 'true'
-            token['type'] = '2'
-            token['actionType'] = '2'
-            print(token)
-            zbbm = []
-            name = None
-            assessIndex = -1
-            for item in self.soup.find('table', id=True).find_all('input', attrs={'name': True, 'value': True}):
-                if 'pfdj' in item.get('name') and item.get('name') != name:
-                    name = item.get('name')
-                    assessIndex += 1
-                    token[name] = assessments[assessGrade[assessIndex]]
-                if 'qz_' in item.get('name'):
-                    token[item.get('name')] = '20'
-                if 'zbbm' in item.get('name'):
-                    zbbm.append(item.get('value'))
-            payload = list(token.items())
-            list(set(zbbm))
-            for item in zbbm:
-                payload.append(('zbbm', item))
-            try:
-                url = 'http://ssfw.xjtu.edu.cn/index.portal' + self.soup.find('form', action=True).get('action')
-            except AttributeError as e:
-                print(e)
-                raise requests.HTTPError['NONONO']
-            print(payload)
-        return payload, url
+        for index, assessObj in enumerate(self.assessObjs):
+            if token.get('zbbm') is not None:
+                print('----generating No.%d payload of assess... %d total.' % (index + 1, len(self.assessObjs)))
+                token.pop('zbbm')
+                assessGrade = list(map(lambda x: x[1], assessObj.content))
+                assessments = assessObj.assessments
+                token['ztpj'] = assessObj.ztpj
+                token['pgyj'] = assessObj.pgyj
+                url = assessObj.url
+                token['sfytj'] = 'true'
+                token['type'] = '2'
+                token['actionType'] = '2'
+                zbbm = []
+                name = None
+                assessIndex = -1
+                for item in self.soup.find('table', id=True).find_all('input', attrs={'name': True, 'value': True}):
+                    if 'pfdj' in item.get('name') and item.get('name') != name:
+                        name = item.get('name')
+                        assessIndex += 1
+                        token[name] = assessments[assessGrade[assessIndex]]
+                    if 'qz_' in item.get('name'):
+                        token[item.get('name')] = '20'
+                    if 'zbbm' in item.get('name'):
+                        zbbm.append(item.get('value'))
+                payload = list(token.items())
+                list(set(zbbm))
+                for item in zbbm:
+                    payload.append(('zbbm', item))
+                print('----done')
+                yield payload, url
+
+    def assessObjGen(self):
+        print('----generating No.%d assess object...' % (len(self.assessObjs) + 1))
+        content = self.assessmentsContentGen()
+        assessments = self.assessmentsGen()
+        postUrl = 'http://ssfw.xjtu.edu.cn/index.portal' + self.soup.find('form', action=True).get('action').strip()
+        name = self.soup.find('table', align='center').find('td', align='center').find_all('b')[3].text
+        self.assessObjs.append(components.AssessComp(name, postUrl, content, assessments))
+        print('----done')
 
     def getTeachingAssessUrls(self):
+        print('getting your assess urls...')
         urls = deque()
         try:
             for item in self.soup.find('table', attrs={'class': 'portlet-table'}).find_all('a', href=True):
@@ -92,7 +94,8 @@ class TeachingAssessUtil(BaseUtil):
                     continue
                 url = item.get('href')
                 urls.append('http://ssfw.xjtu.edu.cn/index.portal' + url)
-                print('appended queue --->' + url)
+                # print('appended queue --->' + url)
+            print('----done!')
             return urls
         except AttributeError as e:
             print(self.response)

@@ -2,7 +2,7 @@
 # @Author: Macpotty
 # @Date:   2016-05-22 15:35:19
 # @Last Modified by:   Michael
-# @Last Modified time: 2016-10-08 10:24:39
+# @Last Modified time: 2016-10-11 00:10:35
 import requests
 from bs4 import BeautifulSoup
 from collections import deque
@@ -53,7 +53,10 @@ class Spider:
                 token[i.get('name')] = i.get('value')
             payload = dict(token, **payload)
         if process is not None:
-            payload, self.currUrl = process(payload)
+            try:
+                payload, self.currUrl = process(payload).__next__()
+            except StopIteration:
+                return
         if postURL is None:
             postURL = self.currUrl
         self.response = self.session.post(postURL, data=payload, headers=self.headers)
@@ -85,7 +88,7 @@ class Spider:
         else:
             if self.currUrl not in self.visited:
                 self.getSite(self.currUrl)
-                print('already grabed:' + str(self.cnt) + '    grabing <---  ' + self.currUrl)
+                # print('already grabed:' + str(self.cnt) + '    grabing <---  ' + self.currUrl)
                 try:
                     if function is not None:
                         function(*args, **kargs)
@@ -127,21 +130,49 @@ class XJTUSpider(Spider):
         return self.soup
 
     def login(self, username, password):
+        print('loading... this may take few seconds.')
         self.getSite('https://cas.xjtu.edu.cn/login?service=http%3A%2F%2F' + self.service + '.xjtu.edu.cn%2Findex.portal')
         self.postForm(username=username, password=password, postURL='https://cas.xjtu.edu.cn/login?service=http%3A%2F%2F' + self.service + '.xjtu.edu.cn%2Findex.portal')
         self.getSite(self.__getStub())
+        print('login successful.')
 
     def logout(self):
         self.getSite(self.rootUrl + '/logout.portal')
+        print('logout.')
 
-    def teachingAssess(self, autoMode=True):
+    def teachingAssess(self, autoMode=True, index=None, fraction=None, pgyj=None, ztpj=None):
         self.getSite('http://ssfw.xjtu.edu.cn/index.portal?.pn=p1142_p1182_p1183')
         self.urls.extend(self.teachingAssessModule.getTeachingAssessUrls())
-        if not autoMode:
-            pass
+        while self.urls:
+            self.openQueue(function=self.teachingAssessModule.assessObjGen)
+        if autoMode:
+            print('start auto assess...')
+            for assessObj in self.teachingAssessModule.assessObjs:
+                self.openQueue(function=self.postForm, process=self.teachingAssessModule.teachingAssessPayloadGen)
+            print('all done.')
         else:
-            while self.urls:
-                self.openQueue(function=self.postForm, process=self.teachingAssessModule.getTeachingAssessPayload)
+            print('start specific assess...')
+            print('----judging assessment infomation...')
+            if index is None:
+                assessList = []
+                print("info: no index info, please give one.")
+                for index, assessobj in enumerate(self.teachingAssessModule.assessObjs):
+                    assessList.append((index, assessobj.name))
+                    print(index, assessobj.name)
+                return assessList
+            elif fraction is None:
+                print("info: no fraction info, please give it.")
+                print(self.teachingAssessModule.assessObjs[index].name, self.teachingAssessModule.assessObjs[index].content)
+                return self.teachingAssessModule.assessObjs[index].name, self.teachingAssessModule.assessObjs[index].content
+            else:
+                print('----info is good. start assess...')
+                self.teachingAssessModule.assessObjs[index].setFraction(fraction)
+                if ztpj is not None:
+                    self.teachingAssessModule.assessObjs[index].ztpj = ztpj
+                if pgyj is not None:
+                    self.teachingAssessModule.assessObjs[index].pgyj = pgyj
+                self.postForm(process=self.teachingAssessModule.teachingAssessPayloadGen)
+                print('done')
 
     def schedule(self):
         self.getSite('http://ssfw.xjtu.edu.cn/pnull.portal?.pen=pe801&.f=f1821&action=print&executeName=print&xnxqdm=20161&newSearch=true')
