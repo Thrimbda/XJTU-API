@@ -1,4 +1,4 @@
-# little-spider-big-net
+# XJTU-API(implement using spider)
 > this is a spider for myself to practice under MIT Licence.
 
 ### require
