@@ -22,11 +22,18 @@ it can also do normal grab things like other spiders do.
     3. login
     4. use method XJTUSpider.teachingAssess()
     5. done!
-    
-    ###### XJTUSpider.teachingAssess(self, autoMode=True, index=None, fraction=None, pgyj=None, ztpj=None)
+
+    ##### example:
+        mySpider = XJTUSpider('ssfw')
+        mySpider.login(username='YOUR_USER_NAME', password='YOUR_PASS_WORD')
+        mySpider.teachingAssess() # auto assess mode. or use specific assess mod
+        # mySpider.teachingAssess(autoMode=False, index=0, fraction=[5,5,5,5,5,5,5,5,5,4], pgyj='YOUR_ASSESS_IDEA', ztpj='YOUR_SAMMARY')
+        mySpider.logout()
+
+    ##### **XJTUSpider.teachingAssess(self, autoMode=True, index=None, fraction=None, pgyj=None, ztpj=None)**
     if auto mode is true, then you'd place noting in the method.
     if not, then declare autoMode=False and give the mothod index of assessment, fraction, idea and sammary.
-    *Don't worry if you got no index and assessments info*
+    **Don't worry if you got no index and assessments info**
     just don't give the method the info you don't know, it will list options for you.
 
     like this:
@@ -36,13 +43,6 @@ it can also do normal grab things like other spiders do.
 
         mySpider.teachingAssess(autoMode=False, index=0)
     will print and return fraction options for you.
-
-    ##### example:
-        mySpider = XJTUSpider('ssfw')
-        mySpider.login(username='YOUR_USER_NAME', password='YOUR_PASS_WORD')
-        mySpider.teachingAssess() # auto assess mode. or use specific assess mod
-        # mySpider.teachingAssess(autoMode=False, index=0, fraction=[5,5,5,5,5,5,5,5,5,4], pgyj='YOUR_ASSESS_IDEA', ztpj='YOUR_SAMMARY')
-        mySpider.logout()
 
 ### problem
 source code of this spider is not very pythonic.
