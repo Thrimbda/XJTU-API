@@ -2,19 +2,23 @@
 # @Author: Michael
 # @Date:   2016-10-05 11:35:00
 # @Last Modified by:   Michael
-# @Last Modified time: 2016-10-11 00:05:31
+# @Last Modified time: 2016-10-11 17:24:07
 import exceptions
 
 
 class BaseComp(object):
     """docstring for BaseComp"""
     name = None
+    url = None
 
     def __init__(self):
         super(BaseComp, self).__init__()
 
     def getName(self):
         return self.name
+
+    def getUrl(self):
+        return self.url
 
 
 class AssessComp(BaseComp):
@@ -24,8 +28,9 @@ class AssessComp(BaseComp):
     pgyj = '满意'
     # assess opinion
 
-    def __init__(self, name, url, content, assessments):
+    def __init__(self, name, postUrl, url, content, assessments):
         super(AssessComp, self).__init__()
+        self.postUrl = postUrl
         self.url = url
         self.name = name
         self.content = content
@@ -34,7 +39,7 @@ class AssessComp(BaseComp):
     def __str__(self):
         content = ''
         for key in self.content:
-            content += '\n\t' + key[0] + ': ' + key[1]
+            content += '\n\t' + str(key[0]) + ': ' + str(key[1])
         return 'subject: %s\ncontent: %s\nsummary: %s\nidea: %s\n' % (self.name, content, self.ztpj, self.pgyj)
 
     def setFraction(self, assessFraction):

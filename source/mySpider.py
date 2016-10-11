@@ -2,7 +2,7 @@
 # @Author: Macpotty
 # @Date:   2016-05-22 15:35:19
 # @Last Modified by:   Michael
-# @Last Modified time: 2016-10-11 00:10:35
+# @Last Modified time: 2016-10-11 18:00:15
 import requests
 from bs4 import BeautifulSoup
 from collections import deque
@@ -12,6 +12,7 @@ import traceback
 import threading
 import re
 import json
+import types
 
 
 class Spider:
@@ -54,13 +55,19 @@ class Spider:
             payload = dict(token, **payload)
         if process is not None:
             try:
-                payload, self.currUrl = process(payload).__next__()
-            except StopIteration:
-                return
+                if isinstance(process, types.FunctionType) or isinstance(process, types.MethodType):
+                    payload, postURL = process(payload)
+                else:
+                    raise TypeError(repr(type(process)) + 'is not a function.')
+            except ValueError:
+                try:
+                    payload, postURL = process(payload).__next__()
+                except StopIteration:
+                    return
         if postURL is None:
             postURL = self.currUrl
         self.response = self.session.post(postURL, data=payload, headers=self.headers)
-        # print(payload)
+        # print(self.response.text)
         if self.response.status_code != 200:
             self.response.raise_for_status()
         self.soupGen()
@@ -118,13 +125,13 @@ class XJTUSpider(Spider):
         self.rootUrl = 'http://' + url + '.xjtu.edu.cn/'
         self.service = url
         super(XJTUSpider, self).__init__(self.rootUrl, False)
-        self.teachingAssessModule = utils.TeachingAssessUtil(self.soup)
-        self.scheduleModule = utils.ScheduleUtil(self.soup)
+        self.teachingAssessModule = utils.TeachingAssessUtil(self.soup, self.currUrl)
+        self.scheduleModule = utils.ScheduleUtil(self.soup, self.currUrl)
 
     def soupGen(self):
         super(XJTUSpider, self).soupGen()
-        self.teachingAssessModule.update(self.soup)
-        self.scheduleModule.update(self.soup)
+        self.teachingAssessModule.update(self.soup, self.currUrl)
+        self.scheduleModule.update(self.soup, self.currUrl)
 
     def getSoup(self):
         return self.soup
@@ -147,8 +154,9 @@ class XJTUSpider(Spider):
             self.openQueue(function=self.teachingAssessModule.assessObjGen)
         if autoMode:
             print('start auto assess...')
-            for assessObj in self.teachingAssessModule.assessObjs:
-                self.openQueue(function=self.postForm, process=self.teachingAssessModule.teachingAssessPayloadGen)
+            for index, assessObj in enumerate(self.teachingAssessModule.assessObjs):
+                self.getSite(self.teachingAssessModule.assessObjs[index].url)
+                self.postForm(index=index, process=self.teachingAssessModule.teachingAssessPayloadGen)
             print('all done.')
         else:
             print('start specific assess...')
@@ -162,7 +170,7 @@ class XJTUSpider(Spider):
                 return assessList
             elif fraction is None:
                 print("info: no fraction info, please give it.")
-                print(self.teachingAssessModule.assessObjs[index].name, self.teachingAssessModule.assessObjs[index].content)
+                print(self.teachingAssessModule.assessObjs[index].name, self.teachingAssessModule.assessObjs[index])
                 return self.teachingAssessModule.assessObjs[index].name, self.teachingAssessModule.assessObjs[index].content
             else:
                 print('----info is good. start assess...')
@@ -171,7 +179,8 @@ class XJTUSpider(Spider):
                     self.teachingAssessModule.assessObjs[index].ztpj = ztpj
                 if pgyj is not None:
                     self.teachingAssessModule.assessObjs[index].pgyj = pgyj
-                self.postForm(process=self.teachingAssessModule.teachingAssessPayloadGen)
+                self.getSite(self.teachingAssessModule.assessObjs[index].url)
+                self.postForm(index=index, process=self.teachingAssessModule.teachingAssessPayloadGen)
                 print('done')
 
     def schedule(self):

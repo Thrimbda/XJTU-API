@@ -2,7 +2,7 @@
 # @Author: Michael
 # @Date:   2016-10-04 01:01:58
 # @Last Modified by:   Michael
-# @Last Modified time: 2016-10-11 00:06:02
+# @Last Modified time: 2016-10-11 17:58:48
 import requests
 import traceback
 import components
@@ -11,17 +11,19 @@ from collections import deque
 
 class BaseUtil(object):
     """docstring for BaseUtil"""
-    def __init__(self, soup):
+    def __init__(self, soup, url):
         super(BaseUtil, self).__init__()
         self.soup = soup
+        self.url = url
 
-    def update(self, soup):
+    def update(self, soup, url):
         self.soup = soup
+        self.url = url
 
 
 class TeachingAssessUtil(BaseUtil):
-    def __init__(self, soup):
-        super(TeachingAssessUtil, self).__init__(soup)
+    def __init__(self, soup, url):
+        super(TeachingAssessUtil, self).__init__(soup, url)
         self.assessObjs = []
 
     def assessmentsGen(self):
@@ -45,36 +47,38 @@ class TeachingAssessUtil(BaseUtil):
 
         use it to do the ting teaching assessment.
         """
-        for index, assessObj in enumerate(self.assessObjs):
-            if token.get('zbbm') is not None:
-                print('----generating No.%d payload of assess... %d total.' % (index + 1, len(self.assessObjs)))
-                token.pop('zbbm')
-                assessGrade = list(map(lambda x: x[1], assessObj.content))
-                assessments = assessObj.assessments
-                token['ztpj'] = assessObj.ztpj
-                token['pgyj'] = assessObj.pgyj
-                url = assessObj.url
-                token['sfytj'] = 'true'
-                token['type'] = '2'
-                token['actionType'] = '2'
-                zbbm = []
-                name = None
-                assessIndex = -1
-                for item in self.soup.find('table', id=True).find_all('input', attrs={'name': True, 'value': True}):
-                    if 'pfdj' in item.get('name') and item.get('name') != name:
-                        name = item.get('name')
-                        assessIndex += 1
-                        token[name] = assessments[assessGrade[assessIndex]]
-                    if 'qz_' in item.get('name'):
-                        token[item.get('name')] = '20'
-                    if 'zbbm' in item.get('name'):
-                        zbbm.append(item.get('value'))
-                payload = list(token.items())
-                list(set(zbbm))
-                for item in zbbm:
-                    payload.append(('zbbm', item))
-                print('----done')
-                yield payload, url
+        if token.get('index') is not None:
+            index = token['index']
+            token.pop('index')
+            assessObj = self.assessObjs[index]
+        if token.get('zbbm') is not None:
+            print('----generating No.%d payload of assess, named %s... %d total.' % (index + 1, assessObj.name, len(self.assessObjs)))
+            token.pop('zbbm')
+            assessGrade = list(map(lambda x: x[1], assessObj.content))
+            assessments = assessObj.assessments
+            token['ztpj'] = assessObj.ztpj
+            token['pgyj'] = assessObj.pgyj
+            token['sfytj'] = 'true'
+            token['type'] = '2'
+            token['actionType'] = '2'
+            zbbm = []
+            name = None
+            assessIndex = -1
+            for item in self.soup.find('table', id=True).find_all('input', attrs={'name': True, 'value': True}):
+                if 'pfdj' in item.get('name') and item.get('name') != name:
+                    name = item.get('name')
+                    assessIndex += 1
+                    token[name] = assessments[assessGrade[assessIndex]]
+                if 'qz_' in item.get('name'):
+                    token[item.get('name')] = '20'
+                if 'zbbm' in item.get('name'):
+                    zbbm.append(item.get('value'))
+            payload = list(token.items())
+            list(set(zbbm))
+            for item in zbbm:
+                payload.append(('zbbm', item))
+            print('----done')
+            return payload, assessObj.postUrl
 
     def assessObjGen(self):
         print('----generating No.%d assess object...' % (len(self.assessObjs) + 1))
@@ -82,7 +86,7 @@ class TeachingAssessUtil(BaseUtil):
         assessments = self.assessmentsGen()
         postUrl = 'http://ssfw.xjtu.edu.cn/index.portal' + self.soup.find('form', action=True).get('action').strip()
         name = self.soup.find('table', align='center').find('td', align='center').find_all('b')[3].text
-        self.assessObjs.append(components.AssessComp(name, postUrl, content, assessments))
+        self.assessObjs.append(components.AssessComp(name, postUrl, self.url, content, assessments))
         print('----done')
 
     def getTeachingAssessUrls(self):
@@ -98,10 +102,8 @@ class TeachingAssessUtil(BaseUtil):
             print('----done!')
             return urls
         except AttributeError as e:
-            print(self.response)
-            print(self.response.status_code)
             print(e)
-            print("No such class in this page: %s" % self.currUrl)
+            print("No such class in this page: %s" % self.url)
         except requests.HTTPError as e:
             traceback.print_exc()
         except Exception:
@@ -110,8 +112,8 @@ class TeachingAssessUtil(BaseUtil):
 
 class ScheduleUtil(BaseUtil):
     """docstring for ScheduleUtil"""
-    def __init__(self, soup):
-        super(ScheduleUtil, self).__init__(soup)
+    def __init__(self, soup, url):
+        super(ScheduleUtil, self).__init__(soup, url)
         self.schedule = components.ScheduleComp()
 
     def scheduleGen(self):
