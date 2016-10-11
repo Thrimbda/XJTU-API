@@ -2,7 +2,7 @@
 # @Author: Macpotty
 # @Date:   2016-05-22 15:35:19
 # @Last Modified by:   Michael
-# @Last Modified time: 2016-10-11 18:00:15
+# @Last Modified time: 2016-10-11 18:06:32
 import requests
 from bs4 import BeautifulSoup
 from collections import deque
@@ -54,16 +54,10 @@ class Spider:
                 token[i.get('name')] = i.get('value')
             payload = dict(token, **payload)
         if process is not None:
-            try:
-                if isinstance(process, types.FunctionType) or isinstance(process, types.MethodType):
-                    payload, postURL = process(payload)
-                else:
-                    raise TypeError(repr(type(process)) + 'is not a function.')
-            except ValueError:
-                try:
-                    payload, postURL = process(payload).__next__()
-                except StopIteration:
-                    return
+            if isinstance(process, types.FunctionType) or isinstance(process, types.MethodType):
+                payload, postURL = process(payload)
+            else:
+                raise TypeError(repr(type(process)) + 'is not a function.')
         if postURL is None:
             postURL = self.currUrl
         self.response = self.session.post(postURL, data=payload, headers=self.headers)
