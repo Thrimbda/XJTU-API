@@ -1,16 +1,16 @@
-lauguage: python3
+lauguage: python
 
 python:
   - 3.4
   - 3.5
 
 before_install:
-  # - wget "https://bootstrap.pypa.io/get-pip.py" && python3 get-pip.py
-  - python --version
-  - pip --version
+  - wget "https://bootstrap.pypa.io/get-pip.py" && sudo python3 get-pip.py
+  - python3 --version
+  - pip3 --version
 
 install:
-  - sudo pip install -r requirements.txt
+  - sudo pip3 install -r requirements.txt
 
 script: 
-  - python -m test.test
+  - python3 -m test.test
