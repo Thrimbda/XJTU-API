@@ -5,8 +5,9 @@ python:
   - 3.5
 
 before_install:
-  - python --version
-  - pip --version
+  - wget "https://bootstrap.pypa.io/get-pip.py" && python3 get-pip.py
+  - python3 --version
+  - pip3 --version
 
 install:
   - sudo pip3 install -r requirements.txt
