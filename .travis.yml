@@ -1,7 +1,6 @@
 lauguage: python
 
 python:
-  - 3.4
   - 3.5
 
 sudo: required
