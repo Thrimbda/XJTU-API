@@ -1,7 +1,7 @@
 lauguage: python
 python:
-  - "3.4"
-  - "3.5"
+  - 3.4
+  - 3.5
 
 before_install:
   - python --version
@@ -10,4 +10,5 @@ before_install:
 install:
   - sudo pip install -r requirements.txt
 
-script: python -m test.test
+script: 
+  - if [[$TRAVIS_PYTHON_VERSION == 3.*]]; then python -m test.test; fi
