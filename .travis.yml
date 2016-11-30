@@ -4,9 +4,12 @@ python:
   - 3.4
   - 3.5
 
+sudo: required
+ 
+dist: trusty
+
 before_install:
-  - sudo apt-get install python3-setuptools
-  - sudo easy_install3 pip
+ -  sudo apt-get install python3-pip
 
 install:
   - sudo pip3 install -r requirements.txt
