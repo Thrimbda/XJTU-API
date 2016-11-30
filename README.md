@@ -1,5 +1,7 @@
 # XJTU-API(implement with a spider)
 > this is a spider for myself to practice under MIT Licence.
+ 
+[![Build Status](https://travis-ci.org/Macsnow14/XJTU-API.svg)](https://travis-ci.org/Macsnow14/XJTU-API)
 
 ### require
 mySpider is build on package **bs4** and **requests** using python3 programming lauguage.

@@ -2,12 +2,12 @@
 # @Author: Macpotty
 # @Date:   2016-05-22 15:35:19
 # @Last Modified by:   Michael
-# @Last Modified time: 2016-10-11 18:06:32
+# @Last Modified time: 2016-12-01 03:20:56
 import requests
 from bs4 import BeautifulSoup
 from collections import deque
-import utils
-import FileModule
+from . import utils
+from . import FileModule
 import traceback
 import threading
 import re
@@ -134,8 +134,14 @@ class XJTUSpider(Spider):
         print('loading... this may take few seconds.')
         self.getSite('https://cas.xjtu.edu.cn/login?service=http%3A%2F%2F' + self.service + '.xjtu.edu.cn%2Findex.portal')
         self.postForm(username=username, password=password, postURL='https://cas.xjtu.edu.cn/login?service=http%3A%2F%2F' + self.service + '.xjtu.edu.cn%2Findex.portal')
-        self.getSite(self.__getStub())
-        print('login successful.')
+        try:
+            self.getSite(self.__getStub())
+        except IndexError:
+            print('login failed.')
+            return 1
+        else:
+            print('login successful.')
+            return 0
 
     def logout(self):
         self.getSite(self.rootUrl + '/logout.portal')

@@ -2,10 +2,10 @@
 # @Author: Michael
 # @Date:   2016-10-04 01:01:58
 # @Last Modified by:   Michael
-# @Last Modified time: 2016-10-11 17:58:48
+# @Last Modified time: 2016-12-01 03:16:54
 import requests
 import traceback
-import components
+from . import components
 from collections import deque
 
 

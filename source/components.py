@@ -2,8 +2,8 @@
 # @Author: Michael
 # @Date:   2016-10-05 11:35:00
 # @Last Modified by:   Michael
-# @Last Modified time: 2016-10-11 17:24:07
-import exceptions
+# @Last Modified time: 2016-12-01 03:08:42
+from . import exceptions
 
 
 class BaseComp(object):
