@@ -8,7 +8,8 @@ sudo: required
 dist: trusty
 
 before_install:
- -  sudo apt-get install python3-pip
+  - export PYTHONPATH=/usr/lib/python3/dist-packages:/usr/local/lib/python3.4/dist-packages
+  - sudo apt-get install python3-pip
 
 install:
   - sudo pip3 install -r requirements.txt
