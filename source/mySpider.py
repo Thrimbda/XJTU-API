@@ -2,7 +2,7 @@
 # @Author: Macpotty
 # @Date:   2016-05-22 15:35:19
 # @Last Modified by:   Michael
-# @Last Modified time: 2016-12-01 03:20:56
+# @Last Modified time: 2017-03-20 20:58:23
 import requests
 from bs4 import BeautifulSoup
 from collections import deque
@@ -183,8 +183,8 @@ class XJTUSpider(Spider):
                 self.postForm(index=index, process=self.teachingAssessModule.teachingAssessPayloadGen)
                 print('done')
 
-    def schedule(self):
-        self.getSite('http://ssfw.xjtu.edu.cn/pnull.portal?.pen=pe801&.f=f1821&action=print&executeName=print&xnxqdm=20161&newSearch=true')
+    def schedule(self, term):
+        self.getSite('http://ssfw.xjtu.edu.cn/pnull.portal?.pen=pe801&.f=f1821&action=print&executeName=print&xnxqdm=' + term + '&newSearch=true')
         self.scheduleModule.scheduleGen()
         return self.scheduleModule.schedule
 

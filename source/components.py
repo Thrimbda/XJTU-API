@@ -2,7 +2,7 @@
 # @Author: Michael
 # @Date:   2016-10-05 11:35:00
 # @Last Modified by:   Michael
-# @Last Modified time: 2016-12-01 03:08:42
+# @Last Modified time: 2017-03-20 21:01:46
 from . import exceptions
 
 
@@ -60,4 +60,4 @@ class ScheduleComp(BaseComp):
         self.timetable = [[True for i in range(8)] for j in range(12)]
 
     def __str__(self):
-        return self.schedule
+        return self.schedule.__str__()
