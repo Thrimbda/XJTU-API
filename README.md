@@ -1,6 +1,11 @@
 # XJTU-API(implement with a spider)
 > this is a spider for myself to practice under MIT Licence.
  
+ **Deprecated**
+
+the XJTU dean website that my spider hacked for has long gone, And I've lost interest hacking it again.
+Sorry boys and girls.
+
 [![Build Status](https://travis-ci.org/Macsnow14/XJTU-API.svg)](https://travis-ci.org/Macsnow14/XJTU-API)
 
 ### require
